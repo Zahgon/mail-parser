@@ -51,9 +51,9 @@ from mailparser.exceptions import MailParserOSError, MailParserReceivedParsingEr
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# RFC 5322 address parsing — fallback for non-compliant display names
+# RFC 5322 address parsing â€” fallback for non-compliant display names
 # ---------------------------------------------------------------------------
-# RFC 5322 §3.4 defines the display-name as a "phrase", which must not contain
+# RFC 5322 Â§3.4 defines the display-name as a "phrase", which must not contain
 # unquoted special characters such as "@".  A header like
 #
 #     From: alice@example.com <bob@example.com>
@@ -65,7 +65,7 @@ log = logging.getLogger(__name__)
 #
 # mail-parser is a security / forensics tool, not an MTA.  Silently hiding an
 # address because its display-name looks like an e-mail address defeats the
-# purpose of the tool — analysts *need* to see those values.  We therefore
+# purpose of the tool â€” analysts *need* to see those values.  We therefore
 # bypass strict compliance with a regex fallback whenever strict parsing yields
 # an empty address, always surfacing the value that is actually in the header.
 _ADDR_FALLBACK_RE = re.compile(
@@ -80,7 +80,7 @@ def get_addresses(raw_header):
     Parse email addresses from a raw address header with a fallback for
     RFC-non-compliant but real-world-common formats.
 
-    RFC 5322 §3.4 requires the display name (phrase) before an angle-bracket
+    RFC 5322 Â§3.4 requires the display name (phrase) before an angle-bracket
     address to consist only of printable ASCII characters that are *not*
     special.  The ``@`` character is special, so a header such as::
 
@@ -93,7 +93,7 @@ def get_addresses(raw_header):
 
     mail-parser is a *security / forensics* tool, not an MTA.  Silently
     discarding an address because its display name happens to look like an
-    e-mail address would hide relevant forensic information from analysts —
+    e-mail address would hide relevant forensic information from analysts â€”
     the very opposite of what the tool is for.  We therefore bypass strict
     RFC compliance by applying a regex-based fallback whenever the strict
     parser yields only empty addresses, so that analysts always see the value
@@ -101,36 +101,13 @@ def get_addresses(raw_header):
 
     Args:
         raw_header (str): raw value of an address header
-            (e.g. ``From``, ``To``, ``CC`` …)
+            (e.g. ``From``, ``To``, ``CC`` â€¦)
 
     Returns:
         list[tuple[str, str]]: list of ``(display_name, email_addr)`` tuples.
             ``display_name`` is an empty string when absent.
     """
-    parsed = email.utils.getaddresses([raw_header], strict=True)
-
-    # If every result from the strict parser has an empty address — while the
-    # raw header is non-empty — fall back to regex extraction so that the
-    # actual address values are not silently lost.
-    if raw_header.strip() and all(not addr for _, addr in parsed):
-        results = []
-        for m in _ADDR_FALLBACK_RE.finditer(raw_header):
-            if m.group(2):  # "Quoted Name" <email>
-                results.append((m.group(1).strip(), m.group(2).strip()))
-            elif m.group(4):  # Any Name <email>  (incl. email-as-display-name)
-                results.append((m.group(3).strip(), m.group(4).strip()))
-            elif m.group(5):  # bare email
-                results.append(("", m.group(5).strip()))
-        if results:
-            log.debug(
-                "Strict address parsing yielded empty results for %r; "
-                "regex fallback recovered %d address(es)",
-                raw_header,
-                len(results),
-            )
-            return results
-
-    return parsed
+    pass
 
 
 def custom_log(level="WARNING", name=None):  # pragma: no cover
@@ -142,34 +119,12 @@ def custom_log(level="WARNING", name=None):  # pragma: no cover
     :type name: str
     :return: logger
     """
-    if name:
-        log = logging.getLogger(name)
-    else:
-        log = logging.getLogger()
-    log.setLevel(level)
-    ch = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        "%(asctime)s | "
-        "%(name)s | "
-        "%(module)s | "
-        "%(funcName)s | "
-        "%(lineno)d | "
-        "%(levelname)s | "
-        "%(message)s"
-    )
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
-    return log
+    pass
 
 
 def sanitize(func):
     """NFC is the normalization form recommended by W3C."""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return normalize("NFC", func(*args, **kwargs))
-
-    return wrapper
+    pass
 
 
 @sanitize
@@ -186,21 +141,7 @@ def ported_string(raw_data, encoding="utf-8", errors="ignore"):
     Returns:
         str
     """
-
-    if not raw_data:
-        return str()
-
-    if isinstance(raw_data, email.header.Header):
-        return str(raw_data)
-
-    if isinstance(raw_data, str):
-        return raw_data
-
-    # raw_data is bytes, decode it
-    try:
-        return str(raw_data, encoding)
-    except (LookupError, UnicodeDecodeError):
-        return str(raw_data, "utf-8", errors)
+    pass
 
 
 def decode_header_part(header):
@@ -213,22 +154,7 @@ def decode_header_part(header):
     Returns:
         str
     """
-    if not header:
-        return str()
-
-    output = str()
-
-    try:
-        for d, c in decode_header(header):
-            c = c if c else "utf-8"
-            output += ported_string(d, c, "ignore")
-
-    # Header parsing failed, when header has charset Shift_JIS
-    except (HeaderParseError, UnicodeError):
-        log.error(f"Failed decoding header part: {header}")
-        output += header
-
-    return output.strip()
+    pass
 
 
 def ported_open(file_):
@@ -240,16 +166,7 @@ def ported_open(file_):
     Returns:
         file object
     """
-    return open(file_, encoding="utf-8", errors="ignore")
-
-
-def find_between(text, first_token, last_token):
-    try:
-        start = text.index(first_token) + len(first_token)
-        end = text.index(last_token, start)
-        return text[start:end].strip()
-    except ValueError:
-        return
+    pass
 
 
 def fingerprints(data):
@@ -262,33 +179,7 @@ def fingerprints(data):
     Returns:
         namedtuple: fingerprints md5, sha1, sha256, sha512
     """
-
-    hashes = namedtuple("Hashes", "md5 sha1 sha256 sha512")
-
-    if not isinstance(data, bytes):
-        data = data.encode("utf-8")
-
-    # md5
-    md5 = hashlib.md5()
-    md5.update(data)
-    md5 = md5.hexdigest()
-
-    # sha1
-    sha1 = hashlib.sha1()
-    sha1.update(data)
-    sha1 = sha1.hexdigest()
-
-    # sha256
-    sha256 = hashlib.sha256()
-    sha256.update(data)
-    sha256 = sha256.hexdigest()
-
-    # sha512
-    sha512 = hashlib.sha512()
-    sha512.update(data)
-    sha512 = sha512.hexdigest()
-
-    return hashes(md5, sha1, sha256, sha512)
+    pass
 
 
 def msgconvert(email):
@@ -303,34 +194,12 @@ def msgconvert(email):
         tuple with file path of mail converted and
         standard output data (str)
     """
-    log.debug("Started converting Outlook email")
-    temph, temp = tempfile.mkstemp(prefix="outlook_")
-    command = ["msgconvert", "--outfile", temp, email]
-
-    try:
-        out = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-
-    except OSError as e:
-        message = f"Check if 'msgconvert' tool is installed / {e!r}"
-        log.exception(message)
-        raise MailParserOSError(message)
-
-    else:
-        stdoutdata, _ = out.communicate()
-        return temp, stdoutdata.decode("utf-8").strip()
-
-    finally:
-        os.close(temph)
+    pass
 
 
 def parse_received(received):
     """
-    Parse a single received header by tokenizing on RFC 5321 §4.4 keywords.
+    Parse a single received header by tokenizing on RFC 5321 Â§4.4 keywords.
 
     Uses a keyword-based splitter to divide the header into clauses
     (from, by, via, with, id, for, envelope-from, envelope-sender),
@@ -346,74 +215,7 @@ def parse_received(received):
     Returns:
         dict -- values by clause
     """
-
-    values_by_clause = {}
-
-    # --- Step 1: Extract date (after semicolon, or SendGrid format) ---
-    date_match = _DATE_RE.search(received)
-    if date_match:
-        values_by_clause["date"] = date_match.group(1)
-        # Work only on the part before the semicolon for clause parsing
-        header_body = received[: date_match.start()]
-    else:
-        # Try SendGrid non-standard date
-        sg_match = _SENDGRID_DATE_RE.search(received)
-        if sg_match:
-            values_by_clause["date"] = sg_match.group(1)
-            header_body = received[: sg_match.start()]
-        else:
-            header_body = received
-
-    # --- Step 2: Tokenize on clause keywords ---
-    # _CLAUSE_SPLITTER.split gives: [preamble, kw1, val1, kw2, val2, ...]
-    parts = _CLAUSE_SPLITTER.split(header_body)
-
-    # parts[0] is preamble (before first keyword), then alternating kw/value
-    i = 1  # skip preamble
-    while i + 1 < len(parts):
-        keyword = parts[i].lower()
-        value = parts[i + 1].strip()
-        i += 2
-
-        if keyword in ("envelope-from", "envelope-sender"):
-            # Extract email from angle brackets
-            m = _ENVELOPE_FROM_RE.search(value)
-            if m:
-                values_by_clause[keyword.replace("-", "_")] = m.group(1)
-        elif keyword == "for":
-            values_by_clause[keyword] = value
-        elif keyword == "from":
-            # RFC 5321: only one 'from' clause per received header.
-            # Only accept the first occurrence; subsequent ones come from
-            # IBM-style "for <addr> from <sender>" constructs.
-            if "from" not in values_by_clause:
-                values_by_clause[keyword] = value
-        else:
-            values_by_clause[keyword] = value
-
-    # --- Step 3: Extract envelope-from/sender from within clause values ---
-    # Some MTAs embed envelope-from inside parenthesized comments in the
-    # 'by' clause, e.g.: "by host.com (envelope-from <addr>)"
-    for clause_key in ("by", "from", "with"):
-        clause_val = values_by_clause.get(clause_key, "")
-        for env_key, env_name in (
-            ("envelope_from", "envelope-from"),
-            ("envelope_sender", "envelope-sender"),
-        ):
-            if env_key not in values_by_clause and env_name in clause_val.lower():
-                m = re.search(
-                    r"(?i)" + re.escape(env_name) + r"\s+<([^>]+)>",
-                    clause_val,
-                )
-                if m:
-                    values_by_clause[env_key] = m.group(1)
-
-    if not values_by_clause:
-        msg = "Unable to match any clauses in %s" % (received)
-        raise MailParserReceivedParsingError(msg)
-
-    log.debug("Parsed clauses: %s", list(values_by_clause.keys()))
-    return values_by_clause
+    pass
 
 
 def receiveds_parsing(receiveds):
@@ -426,58 +228,14 @@ def receiveds_parsing(receiveds):
     Returns:
         a list of parsed receiveds headers with first hop in first position
     """
-
-    parsed = []
-    receiveds = [re.sub(JUNK_PATTERN, " ", i).strip() for i in receiveds]
-    n = len(receiveds)
-    log.debug(f"Nr. of receiveds. {n}")
-
-    for idx, received in enumerate(receiveds):
-        log.debug(f"Parsing received {idx + 1}/{n}")
-        log.debug(f"Try to parse {received!r}")
-        try:
-            # try to parse the current received header...
-            values_by_clause = parse_received(received)
-        except MailParserReceivedParsingError:
-            # if we can't, let's append the raw
-            parsed.append({"raw": received})
-        else:
-            # otherwise append the full values_by_clause dict
-            parsed.append(values_by_clause)
-
-    log.debug("len(receiveds) %s, len(parsed) %s" % (len(receiveds), len(parsed)))
-
-    if len(receiveds) != len(parsed):
-        # something really bad happened,
-        # so just return raw receiveds with hop indices
-        log.error(
-            "len(receiveds): %s, len(parsed): %s, receiveds: %s, \
-            parsed: %s"
-            % (len(receiveds), len(parsed), receiveds, parsed)
-        )
-        return receiveds_not_parsed(receiveds)
-
-    else:
-        # all's good! we have parsed or raw receiveds for each received header
-        return receiveds_format(parsed)
+    pass
 
 
 def convert_mail_date(date):
     """
     Convert a mail date in a datetime object.
     """
-    log.debug(f"Date to parse: {date!r}")
-    d = email.utils.parsedate_tz(date)
-    if d is None:
-        raise ValueError(f"Cannot parse date: {date!r}")
-    log.debug(f"Date parsed: {d!r}")
-    t = email.utils.mktime_tz(d)
-    log.debug(f"Date parsed in timestamp: {t!r}")
-    date_utc = datetime.datetime.fromtimestamp(t, datetime.timezone.utc)
-    timezone = d[9] / 3600.0 if d[9] else 0
-    timezone = f"{timezone:+.1f}"
-    log.debug(f"Calculated timezone: {timezone!r}")
-    return date_utc, timezone
+    pass
 
 
 def receiveds_not_parsed(receiveds):
@@ -492,18 +250,7 @@ def receiveds_not_parsed(receiveds):
     Returns:
         a list of not parsed receiveds headers with first hop in first position
     """
-    log.debug("Receiveds for this email are not parsed")
-
-    output = []
-    counter = Counter()
-
-    for i in receiveds[::-1]:
-        j = {"raw": i.strip()}
-        j["hop"] = counter["hop"] + 1
-        counter["hop"] += 1
-        output.append(j)
-
-    return output
+    pass
 
 
 def receiveds_format(receiveds):
@@ -517,65 +264,7 @@ def receiveds_format(receiveds):
     Returns:
         list of receiveds reformated and with new fields
     """
-    log.debug("Receiveds for this email are parsed")
-
-    output = []
-    counter = Counter()
-
-    for i in receiveds[::-1]:
-        # Clean strings
-        j = {k: v.strip() for k, v in i.items() if v}
-
-        # Add hop
-        j["hop"] = counter["hop"] + 1
-
-        # Add UTC date
-        if i.get("date"):
-            # Modify date to manage strange header like:
-            # "for <eboktor@romolo.com>; Tue, 7 Mar 2017 14:29:24 -0800",
-            i["date"] = i["date"].split(";")[-1]
-            # Strip leading RFC 2822 comments like:
-            # "(version=TLSv1/SSLv3 cipher=AES128-GCM-SHA256 bits=128/128) Wed, ..."
-            i["date"] = re.sub(r"^\s*(?:\([^)]*\)\s*)+", "", i["date"])
-            try:
-                j["date_utc"], _ = convert_mail_date(i["date"])
-            except (TypeError, ValueError):
-                j["date_utc"] = None
-
-        # Add delay
-        size = len(output)
-        now = j.get("date_utc")
-
-        if size and now:
-            before = output[counter["hop"] - 1].get("date_utc")
-            if before:
-                j["delay"] = (now - before).total_seconds()
-            else:
-                j["delay"] = 0
-        else:
-            j["delay"] = 0
-
-        # append result
-        output.append(j)
-
-        # new hop
-        counter["hop"] += 1
-
-    for i in output:
-        if i.get("date_utc"):
-            i["date_utc"] = i["date_utc"].isoformat()
-    return output
-
-
-def get_to_domains(to=[], reply_to=[]):
-    domains = set()
-    for i in to + reply_to:
-        try:
-            domains.add(i[1].split("@")[-1].lower().strip())
-        except (KeyError, IndexError):
-            pass
-
-    return list(domains)
+    pass
 
 
 def get_header(message, name):
@@ -591,17 +280,7 @@ def get_header(message, name):
         str if there is an header
         list if there are more than one
     """
-
-    headers = message.get_all(name)
-    log.debug(f"Getting header {name!r}: {headers!r}")
-    if headers:
-        headers = [decode_header_part(i) for i in headers]
-        if len(headers) == 1:
-            # in this case return a string
-            return headers[0].strip()
-        # in this case return a list
-        return headers
-    return str()
+    pass
 
 
 def get_mail_keys(message, complete=True):
@@ -615,56 +294,7 @@ def get_mail_keys(message, complete=True):
     Returns:
         set with all email parts
     """
-
-    if complete:
-        log.debug("Get all headers")
-        all_headers_keys = {i.lower() for i in message.keys()}
-        all_parts = ADDRESSES_HEADERS | OTHERS_PARTS | all_headers_keys
-    else:
-        log.debug("Get only mains headers")
-        all_parts = ADDRESSES_HEADERS | OTHERS_PARTS
-
-    log.debug("All parts to get: {}".format(", ".join(all_parts)))
-    return all_parts
-
-
-def safe_print(data):  # pragma: no cover
-    try:
-        print(data)
-    except UnicodeEncodeError:
-        print(data.encode("utf-8"))
-
-
-def print_mail_fingerprints(data):  # pragma: no cover
-    md5, sha1, sha256, sha512 = fingerprints(data)
-    print(f"md5:\t{md5}")
-    print(f"sha1:\t{sha1}")
-    print(f"sha256:\t{sha256}")
-    print(f"sha512:\t{sha512}")
-
-
-def print_attachments(attachments, flag_hash):  # pragma: no cover
-    if flag_hash:
-        for i in attachments:
-            if i.get("content_transfer_encoding") == "base64":
-                payload = base64.b64decode(i["payload"])
-            else:
-                payload = i["payload"]
-
-            i["md5"], i["sha1"], i["sha256"], i["sha512"] = fingerprints(payload)
-
-    for i in attachments:
-        safe_print(json.dumps(i, ensure_ascii=False, indent=4))
-
-
-def write_attachments(attachments, base_path):  # pragma: no cover
-    for a in attachments:
-        write_sample(
-            binary=a["binary"],
-            payload=a["payload"],
-            path=base_path,
-            filename=a["filename"],
-        )
+    pass
 
 
 def write_sample(binary, payload, path, filename):  # pragma: no cover
@@ -678,16 +308,7 @@ def write_sample(binary, payload, path, filename):  # pragma: no cover
         filename (string): name of file
         hash_ (string): file hash
     """
-    if not os.path.exists(path):
-        os.makedirs(path)
-    sample = os.path.join(path, filename)
-
-    if binary:
-        with open(sample, "wb") as f:
-            f.write(base64.b64decode(payload))
-    else:
-        with open(sample, "w") as f:
-            f.write(payload)
+    pass
 
 
 def random_string(string_length=10):
@@ -699,5 +320,41 @@ def random_string(string_length=10):
     Returns:
         str -- Random string
     """
-    letters = string.ascii_lowercase
-    return "".join(random.choice(letters) for _ in range(string_length))
+    pass
+
+
+def find_between(text, first_token, last_token):
+    """Find text between two tokens.
+
+    Args:
+        text (str): Input text to search
+        first_token (str): Starting delimiter
+        last_token (str): Ending delimiter
+
+    Returns:
+        str: Text found between tokens
+    """
+    pass
+
+
+def get_to_domains(to=[], reply_to=[]):
+    """Extract domains from to and reply-to addresses.
+
+    Keyword Arguments:
+        to (list): List of to addresses (default: {[]})
+        reply_to (list): List of reply-to addresses (default: {[]})
+
+    Returns:
+        set: Set of domains
+    """
+    pass
+
+
+def write_attachments(attachments, base_path):  # pragma: no cover
+    """Write attachments to disk.
+
+    Args:
+        attachments (list): List of attachment dictionaries
+        base_path (str): Base directory path to write attachments
+    """
+    pass
