@@ -124,6 +124,11 @@ def custom_log(level="WARNING", name=None):  # pragma: no cover
 
 def sanitize(func):
     """NFC is the normalization form recommended by W3C."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        pass
+
     pass
 
 
