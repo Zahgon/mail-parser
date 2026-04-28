@@ -297,6 +297,34 @@ def get_mail_keys(message, complete=True):
     pass
 
 
+def safe_print(data):  # pragma: no cover
+    """Print data to stdout, falling back to UTF-8 encoding on error.
+
+    Args:
+        data: data to print
+    """
+    pass
+
+
+def print_mail_fingerprints(data):  # pragma: no cover
+    """Print MD5, SHA1, SHA256, and SHA512 fingerprints of the given data.
+
+    Args:
+        data: raw data to fingerprint
+    """
+    pass
+
+
+def print_attachments(attachments, flag_hash):  # pragma: no cover
+    """Print attachments as formatted JSON, optionally including hashes.
+
+    Args:
+        attachments (list): list of attachment dictionaries
+        flag_hash (bool): if True, compute and include fingerprints
+    """
+    pass
+
+
 def write_sample(binary, payload, path, filename):  # pragma: no cover
     """
     This function writes a sample on file system.
